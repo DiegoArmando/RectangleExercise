@@ -68,6 +68,11 @@ namespace Rectangle_Exercise
 
 			intPoints = new IntersectionPoint[4];//There can be, at most, four intersections. Usually only two.
 
+			for(int i = 0; i < 4; i++)
+			{
+				intPoints[i] = new IntersectionPoint(gd);
+			}
+
 			interiorTex = new Texture2D(gd, 1, 1);
 			Color[] colorData = new Color[1];
 
@@ -112,6 +117,11 @@ namespace Rectangle_Exercise
 			lines[1] = new Line(topLeft, botLeft, new Color(255, 255, 0, 255), gd, true, false);
 			lines[2] = new Line(botLeft, botRight, new Color(255, 255, 0, 255), gd, false, true);
 			lines[3] = new Line(topRight, botRight, new Color(255, 255, 0, 255), gd, false, false);
+
+			for(int i = 0; i < 4; i++)
+			{
+				intPoints[i].resetPos();
+			}
 
 			pos = topLeft;
 			initialPos = pos;
@@ -188,6 +198,12 @@ namespace Rectangle_Exercise
 			{
 				lines[i].adjacent = false;
 			}
+
+			//All intersection points are moved offscreen until proven to be needed
+			for (int i = 0; i < 4; i++)
+			{
+				intPoints[i].resetPos();
+			}
 		}
 
 		private void UpdatePosition(Vector2 difference)
@@ -227,6 +243,10 @@ namespace Rectangle_Exercise
 			{
 				intersecting = true;
 				otherRect.intersecting = true;
+				intPoints[0].changePos(topLeft.X, otherRect.topLeft.Y);
+				intPoints[1].changePos(topRight.X, otherRect.topRight.Y);
+				intPoints[2].changePos(botLeft.X, otherRect.botLeft.Y);
+				intPoints[3].changePos(botRight.X, otherRect.botRight.Y);
 			}
 
 			//After all other checks, check each side for adjacency
@@ -302,8 +322,53 @@ namespace Rectangle_Exercise
 		{
 			if(ContainsPoint(otherRect.topLeft))
 			{
-
+				if (ContainsPoint(otherRect.topRight))
+				{
+					intPoints[0].changePos(otherRect.topLeft.X, botLeft.Y);
+					intPoints[1].changePos(otherRect.topRight.X, botLeft.Y);
+					
+				}
+				else if(ContainsPoint(otherRect.botLeft))
+				{
+					intPoints[0].changePos(topRight.X, otherRect.topLeft.Y);
+					intPoints[1].changePos(topRight.X, otherRect.botLeft.Y);
+				}
+				else
+				{
+					intPoints[0].changePos(otherRect.topLeft.X, botRight.Y);
+					intPoints[1].changePos(botRight.X, otherRect.topLeft.Y);
+				}
 			}
+			else if(ContainsPoint(otherRect.botRight))
+			{
+				if(ContainsPoint(otherRect.botLeft))
+				{
+					intPoints[0].changePos(otherRect.botLeft.X, topLeft.Y);
+					intPoints[1].changePos(otherRect.botRight.X, topLeft.Y);
+				}
+				else if(ContainsPoint(otherRect.topRight))
+				{
+					intPoints[0].changePos(topLeft.X, otherRect.topRight.Y);
+					intPoints[1].changePos(topLeft.X, otherRect.botRight.Y);
+				}
+				else
+				{
+					intPoints[0].changePos(otherRect.botRight.X, topLeft.Y);
+					intPoints[1].changePos(topLeft.X, otherRect.botRight.Y);
+				}
+			}
+			else if(ContainsPoint(otherRect.botLeft))
+			{
+				intPoints[0].changePos(otherRect.botLeft.X, topRight.Y);
+				intPoints[1].changePos(topRight.X, otherRect.botLeft.Y);
+			}
+			//If we have reached here, the intersecting point must be the top right.
+			else
+			{
+				intPoints[0].changePos(otherRect.topRight.X, botLeft.Y);
+				intPoints[1].changePos(botLeft.X, otherRect.topRight.Y);
+			}
+
 		}
 
 		public bool ContainsPoint(Vector2 testPoint)
@@ -330,7 +395,9 @@ namespace Rectangle_Exercise
 			for(int i = 0; i < 4; i++)
 			{
 				if(lines[i].adjacent) lines[i].Draw();
+				if (intPoints[i].active) intPoints[i].Draw();
 			}
+
 
 			//if(top.adjacent) top.Draw();
 			//if(left.adjacent) left.Draw();

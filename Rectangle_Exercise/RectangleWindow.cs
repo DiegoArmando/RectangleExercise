@@ -39,7 +39,7 @@ namespace Rectangle_Exercise
 		{
 			// TODO: Add your initialization logic here
 			rectList = new List<Rect>();
-			for (int i = 0; i < 5; i++)
+			for (int i = 0; i < 2; i++)
 			{
 				rectList.Add(new Rect(GraphicsDevice, i));
 			}
