@@ -398,12 +398,6 @@ namespace Rectangle_Exercise
 				if (intPoints[i].active) intPoints[i].Draw();
 			}
 
-
-			//if(top.adjacent) top.Draw();
-			//if(left.adjacent) left.Draw();
-			//if(right.adjacent) right.Draw();
-			//if(bot.adjacent) bot.Draw();
-
 			sb.End();
 		}
 	}

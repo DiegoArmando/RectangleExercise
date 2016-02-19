@@ -37,7 +37,7 @@ namespace Rectangle_Exercise
 		/// </summary>
 		protected override void Initialize()
 		{
-			// TODO: Add your initialization logic here
+
 			rectList = new List<Rect>();
 			for (int i = 0; i < 2; i++)
 			{
@@ -57,18 +57,12 @@ namespace Rectangle_Exercise
 		{
 			// Create a new SpriteBatch, which can be used to draw textures.
 			spriteBatch = new SpriteBatch(GraphicsDevice);
-
-			// TODO: use this.Content to load your game content here
+			
 		}
 
-		/// <summary>
-		/// UnloadContent will be called once per game and is the place to unload
-		/// game-specific content.
-		/// </summary>
-		protected override void UnloadContent()
-		{
-			// TODO: Unload any non ContentManager content here
-		}
+		//Ordinarily in a Monogame project, there would also be an UnloadContent function.
+		//However, since the program only unloads content when it exits, in this case it is unnecessary. 
+
 
 		/// <summary>
 		/// Allows the game to run logic such as updating the world,
