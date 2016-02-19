@@ -41,7 +41,7 @@ namespace Rectangle_Exercise
 			rectList = new List<Rect>();
 			for (int i = 0; i < 5; i++)
 			{
-				rectList.Add(new Rect(GraphicsDevice));
+				rectList.Add(new Rect(GraphicsDevice, i));
 			}
 
 			this.IsMouseVisible = true;//Without this, the mouse is invisible

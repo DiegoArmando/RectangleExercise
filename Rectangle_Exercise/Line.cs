@@ -12,8 +12,13 @@ namespace Rectangle_Exercise
 	{
 		//In a rendering engine, a texture referes to a collection of pixel data used to render an object.
 		Texture2D lineTex;
-		Vector2 startPoint;
-		Vector2 endPoint;
+		public Vector2 startPoint;
+		public Vector2 endPoint;
+
+		//On the left and bottom, the lines will draw in an unintuivie place to the user. 
+		//These two vectors will allow us to ensure that the math and what the user sees line up how they would expect.
+		Vector2 drawStart;
+		Vector2 drawEnd;
 
 		Vector2 initialStart;
 		Vector2 initialEnd;
@@ -26,6 +31,8 @@ namespace Rectangle_Exercise
 		bool shiftR;
 		bool shiftU;
 
+		public bool adjacent = false;
+
 		//The Sprite Batch is a way of communicating with the renderer.
 		SpriteBatch sb;
 
@@ -34,25 +41,29 @@ namespace Rectangle_Exercise
 			startPoint = startPointArg;
 			endPoint = endPointArg;
 
-			initialStart = startPoint;
-			initialEnd = endPoint;
-
-			color = rectColor;
-			color.A = 255; //nontransparent lines
-
 			shiftR = shiftRight;
 			shiftU = shiftUp;
 
+			drawStart = startPoint;
+			drawEnd = endPoint;
+
 			if(shiftR)
 			{
-				startPoint.X += lineWidth;
-				endPoint.X += lineWidth;
+				drawStart.X += lineWidth;
+				drawEnd.X += lineWidth;
 			}
 			if(shiftU)
 			{
-				startPoint.Y -= lineWidth;
-				endPoint.Y -= lineWidth;
+				drawStart.Y -= lineWidth;
+				drawEnd.Y -= lineWidth;
 			}
+			
+
+			initialStart = startPoint;
+			initialEnd = endPoint;
+
+
+			color = rectColor;
 
 			//Here, we are making a texture which is a single pixel. This will be stretched to form our lines.
 			lineTex = new Texture2D(gd, 1, 1);
@@ -70,7 +81,7 @@ namespace Rectangle_Exercise
 
 			//We are using the rectangle here as an arugment to render the line. This is necessary to achieve the solid lines
 			//and transparent interior to each rectangle which these lines are a part of.
-			sb.Draw(lineTex, new Rectangle((int)startPoint.X, (int)startPoint.Y, (int)edge.Length(), lineWidth), null, color, angle, new Vector2(0, 0), SpriteEffects.None, 1);
+			sb.Draw(lineTex, new Rectangle((int)drawStart.X, (int)drawStart.Y, (int)edge.Length(), lineWidth), null, color, angle, new Vector2(0, 0), SpriteEffects.None, 0);
 
 
 			sb.End();
@@ -80,6 +91,20 @@ namespace Rectangle_Exercise
 		{
 			startPoint = initialStart + difference;
 			endPoint = initialEnd + difference;
+
+			drawStart = startPoint;
+			drawEnd = endPoint;
+
+			if (shiftR)
+			{
+				drawStart.X += lineWidth;
+				drawEnd.X += lineWidth;
+			}
+			if (shiftU)
+			{
+				drawStart.Y -= lineWidth;
+				drawEnd.Y -= lineWidth;
+			}
 		}
 
 		//Called after the box is dropped by the user to prevent resetting the position incorrectly on a second pickup.
@@ -87,18 +112,6 @@ namespace Rectangle_Exercise
 		{
 			initialStart = startPoint;
 			initialEnd = endPoint;
-
-			if (shiftR)
-			{
-				startPoint.X += lineWidth;
-				endPoint.X += lineWidth;
-			}
-			if (shiftU)
-			{
-				startPoint.Y -= lineWidth;
-				endPoint.Y -= lineWidth;
-			}
-
 			
 		}
 	}

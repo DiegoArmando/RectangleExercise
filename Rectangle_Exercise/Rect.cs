@@ -12,6 +12,10 @@ namespace Rectangle_Exercise
 	//NOTE: We will not be using any of the functions of the built in Rectangle object, as that would defeat the purpose of the exercise.
 	class Rect
 	{
+		//This makes it easier to identify what's happening for the user
+		public int ID; 
+
+
 		//These will be our primary detection tools, and are extensible to rotated rectangle detection.
 		public Vector2 topLeft;
 		public Vector2 topRight;
@@ -22,10 +26,7 @@ namespace Rectangle_Exercise
 		Vector2 pos;
 		Vector2 initialPos;
 
-		Line top;
-		Line right;
-		Line left;
-		Line bot;
+		public Line[] lines;
 
 		Color color;
 
@@ -42,9 +43,14 @@ namespace Rectangle_Exercise
 		public bool contained = false;
 		public bool adjacent = false;
 
+		//The poits at which this rectangle intersects with others. This is nullable to allow the same logic for 2 or 4 intersections.
+		IntersectionPoint[] intPoints;
+
 		//Is the box being dragged around the screen by the mouse?
 		bool beingDragged = false;
-		Vector2 initDragPoint;//where the mouse was when the box was clicked
+
+		//where the mouse was when the box was clicked
+		Vector2 initDragPoint;
 
 		//This will be used to determine the initial placement and size.
 		//While this may look excessive, usng the default rand() may result in duplicate values 
@@ -52,13 +58,15 @@ namespace Rectangle_Exercise
 		RNGCryptoServiceProvider rand = new RNGCryptoServiceProvider();
 		byte[] randomNumber = new byte[1];
 
-		public Rect(GraphicsDevice gd)
+		public Rect(GraphicsDevice gd, int sentID)
 		{
 			sb = new SpriteBatch(gd);
+			ID = sentID;
 
 			color = Color.White; //The color is set to white so that it can be shifted any way we like.
 			color.A = 122;//set the alpha value to about half
 
+			intPoints = new IntersectionPoint[4];//There can be, at most, four intersections. Usually only two.
 
 			interiorTex = new Texture2D(gd, 1, 1);
 			Color[] colorData = new Color[1];
@@ -70,8 +78,8 @@ namespace Rectangle_Exercise
 
 			interiorTex.SetData<Color>(colorData);
 
-			Console.Write("sb test in initialize: " + sb.ToString());
-
+			lines = new Line[4];
+			
 			//Sets the size and position
 			Refresh(gd);
 			
@@ -98,10 +106,12 @@ namespace Rectangle_Exercise
 			botLeft = new Vector2(topLeft.X, topLeft.Y + height);
 			botRight = new Vector2(topLeft.X + width, topLeft.Y + height);
 
-			top = new Line(topLeft, topRight, color, gd, false, true);
-			left = new Line(topLeft, botLeft, color, gd, false, false);
-			right = new Line(topRight, botRight, color, gd, true, false);
-			bot = new Line(botLeft, botRight, color, gd, false, false);
+
+			//255, 255, 0, 255 is Yellow. Lines are, in order, top, left, bottom, right.
+			lines[0] = new Line(topLeft, topRight, new Color(255, 255, 0, 255), gd, false, false);
+			lines[1] = new Line(topLeft, botLeft, new Color(255, 255, 0, 255), gd, true, false);
+			lines[2] = new Line(botLeft, botRight, new Color(255, 255, 0, 255), gd, false, true);
+			lines[3] = new Line(topRight, botRight, new Color(255, 255, 0, 255), gd, false, false);
 
 			pos = topLeft;
 			initialPos = pos;
@@ -136,10 +146,10 @@ namespace Rectangle_Exercise
 					beingDragged = false;
 					dragging = false;
 					initialPos = pos;
-					top.SetNewHome();
-					left.SetNewHome();
-					right.SetNewHome();
-					bot.SetNewHome();
+					for(int i = 0; i < 4; i++)
+					{
+						lines[i].SetNewHome();
+					}
 				}
 			}
 
@@ -153,17 +163,13 @@ namespace Rectangle_Exercise
 			{
 				ChangeColor(Color.Purple);
 			}
-			else if(adjacent)
-			{
-				ChangeColor(Color.Yellow);
-			}
 			else if(intersecting)
 			{
 				ChangeColor(Color.Blue);
 			}
 			else if(beingDragged)
 			{
-				ChangeColor(new Color(color.R + 30, color.G + 30, color.B + 30, color.A));
+				ChangeColor(new Color(70, 70, 70, color.A));
 			}
 			else
 			{
@@ -176,6 +182,12 @@ namespace Rectangle_Exercise
 			containing = false;
 			contained = false;
 			adjacent = false;
+
+			//All lines are invisible until calculated to be adjacent.
+			for(int i = 0; i < 4; i++)
+			{
+				lines[i].adjacent = false;
+			}
 		}
 
 		private void UpdatePosition(Vector2 difference)
@@ -188,26 +200,115 @@ namespace Rectangle_Exercise
 			botLeft = new Vector2(topLeft.X, topLeft.Y + height);
 			botRight = new Vector2(topLeft.X + width, topLeft.Y + height);
 
-			top.UpdatePosition(difference);
-			left.UpdatePosition(difference);
-			right.UpdatePosition(difference);
-			bot.UpdatePosition(difference);
-
+			for(int i = 0; i < 4; i++)
+			{
+				lines[i].UpdatePosition(difference);
+			}
 
 		}
 
 		public void checkInteraction(Rect otherRect)
 		{
+			//Is the other rect inside this rect? Are all four of its points contained?
 			if(ContainsPoint(otherRect.topLeft) && ContainsPoint(otherRect.topRight) && ContainsPoint(otherRect.botLeft) && ContainsPoint(otherRect.botRight))
 			{
 				containing = true;
 				otherRect.contained = true;
 			}
+			//Is the other rect intersecting this rect? Is at least one corner contained?
+			else if(ContainsPoint(otherRect.topLeft) || ContainsPoint(otherRect.topRight) || ContainsPoint(otherRect.botLeft) || ContainsPoint(otherRect.botRight))
+			{
+				intersecting = true;
+				otherRect.intersecting = true;
+				determineIntersections(otherRect);
+			}
+			//Are the two overlapping in a T shape, where no corners are contained but four intersections still occur?
+			else if(CheckForT(otherRect))
+			{
+				intersecting = true;
+				otherRect.intersecting = true;
+			}
+
+			//After all other checks, check each side for adjacency
+			CheckForAdj(otherRect);
+			
+		}
+
+		bool CheckForT(Rect otherRect)
+		{
+			//If all the points of otherRect are below the top of this one, and above the bottom of this one,
+			//and all the points of this one are to the right of otherRect's left, and to the left of otherRect's right,
+			//the two are colliding in a T.
+
+			//We're checking for this:
+			/*
+
+			       _____
+			_______|___|__
+			|      |   |  |
+			|      |   |  |
+			-------|---|--|
+			       |___|
+
+			*/
+
+			bool otherBetweenTopAndBot;
+			bool thisBetweenLeftAndRight;
+
+			otherBetweenTopAndBot = (otherRect.topLeft.Y >= topLeft.Y && otherRect.botRight.Y >= topLeft.Y && otherRect.topLeft.Y <= botRight.Y && otherRect.botRight.Y <= botRight.Y);
+			thisBetweenLeftAndRight = (topLeft.X >= otherRect.topLeft.X && topRight.X >= otherRect.topLeft.X && topLeft.X <= otherRect.botRight.X && topRight.X <= otherRect.botRight.X);
+			return otherBetweenTopAndBot && thisBetweenLeftAndRight;
+		}
+
+		void CheckForAdj(Rect otherRect)
+		{
+			//If the left is the same as or a subset of the other's right or left, color it yellow.
+			//Likewise, do the same for right, top and bottom.
+
+			//Alll sides are transparent until proven to be adjacent
+			
+			for(int i = 0; i < 4; i++)
+			{
+				for(int j = 0; j < 4; j++)
+				{
+					//The top and bottom are even indices, the right and left are odd indices.
+					//Only check against the indices which have the same even or odd property.
+					if( (i % 2) == (j % 2) )
+					{
+						if(i % 2 == 0)
+						{
+							if (Math.Abs(lines[i].startPoint.Y - otherRect.lines[j].startPoint.Y) < float.Epsilon && lines[i].startPoint.X >= otherRect.lines[j].startPoint.X && lines[i].endPoint.X <= otherRect.lines[j].endPoint.X)
+							{
+								adjacent = true;
+								lines[i].adjacent = true;
+							}
+						}
+						else
+						{
+							//if(Math.Abs(topLeft.X - otherRect.topLeft.X) < float.Epsilon && topLeft.Y >= otherRect.topLeft.Y && botLeft.Y <= otherRect.botLeft.Y)
+							if (Math.Abs(lines[i].startPoint.X - otherRect.lines[j].startPoint.X) < float.Epsilon && lines[i].startPoint.Y >= otherRect.lines[j].startPoint.Y && lines[i].endPoint.Y <= otherRect.lines[j].endPoint.Y)
+							{
+								adjacent = true;
+								lines[i].adjacent = true;
+							}
+						}
+					}
+				}
+			}
+
+		}
+
+		void determineIntersections(Rect otherRect)
+		{
+			if(ContainsPoint(otherRect.topLeft))
+			{
+
+			}
 		}
 
 		public bool ContainsPoint(Vector2 testPoint)
 		{
-			//Check if the point is in between the sides of the rectangle
+			//Check if the point is in between or on the sides of the rectangle
 			return (testPoint.Y > topLeft.Y && testPoint.Y < botRight.Y && testPoint.X > topLeft.X && testPoint.X < botRight.X);
 		}
 
@@ -215,10 +316,6 @@ namespace Rectangle_Exercise
 		{
 			color = newColor;
 			color.A = 122;
-			top.color = newColor;
-			left.color = newColor;
-			right.color = newColor;
-			bot.color = newColor;
 		}
 
 		public void Draw()
@@ -227,13 +324,19 @@ namespace Rectangle_Exercise
 			int width = (int)(topRight - topLeft).Length();
 			int height = (int)(botLeft - topLeft).Length();
 
-			sb.Draw(interiorTex, new Rectangle((int)topLeft.X, (int)topLeft.Y, width, height), null, color, 0, new Vector2(0, 0), SpriteEffects.None, 0);
+			sb.Draw(interiorTex, new Rectangle((int)topLeft.X, (int)topLeft.Y, width, height), null, color, 0, new Vector2(0, 0), SpriteEffects.None, 1);
 
-			//top.Draw();
-			//left.Draw();
-			//right.Draw();
-			//bot.Draw();
-			
+			//if they aren't adjacent, don't draw them
+			for(int i = 0; i < 4; i++)
+			{
+				if(lines[i].adjacent) lines[i].Draw();
+			}
+
+			//if(top.adjacent) top.Draw();
+			//if(left.adjacent) left.Draw();
+			//if(right.adjacent) right.Draw();
+			//if(bot.adjacent) bot.Draw();
+
 			sb.End();
 		}
 	}
