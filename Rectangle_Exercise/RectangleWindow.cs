@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.Collections.Generic;
+
 
 namespace Rectangle_Exercise
 {
@@ -13,6 +15,14 @@ namespace Rectangle_Exercise
 		GraphicsDeviceManager graphics;
 		SpriteBatch spriteBatch;
 
+		List<Rect> rectList;
+
+		//Was the R key not pressed the previous frame? Prevents a refresh per frame.
+		bool wasJustUp = true;
+
+		//Is the user currently dragging a box? If so, don't drag any others.
+		bool dragging = false;
+		
 		public RectangleWindow()
 		{
 			graphics = new GraphicsDeviceManager(this);
@@ -28,6 +38,13 @@ namespace Rectangle_Exercise
 		protected override void Initialize()
 		{
 			// TODO: Add your initialization logic here
+			rectList = new List<Rect>();
+			for (int i = 0; i < 2; i++)
+			{
+				rectList.Add(new Rect(GraphicsDevice, i));
+			}
+
+			this.IsMouseVisible = true;//Without this, the mouse is invisible
 
 			base.Initialize();
 		}
@@ -63,7 +80,40 @@ namespace Rectangle_Exercise
 			if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
 				Exit();
 
-			// TODO: Add your update logic here
+			if (Keyboard.GetState().IsKeyDown(Keys.R))
+			{
+				if (wasJustUp)
+				{
+					foreach (Rect r in rectList)
+					{
+						r.Refresh(GraphicsDevice);
+					}
+					wasJustUp = false;
+				}
+
+			}
+			else
+			{
+				wasJustUp = true;
+			}
+
+			foreach (Rect r in rectList)
+			{
+				r.Update((Mouse.GetState().LeftButton == ButtonState.Pressed), Mouse.GetState().Position, ref dragging);
+			}
+
+			for (int i = 0; i < rectList.Count; i++)
+			{
+				for(int j = 0; j < rectList.Count; j++)
+				{
+					if (i != j)
+					{
+						rectList[i].checkInteraction(rectList[j]);
+					}
+				}
+			}
+
+			
 
 			base.Update(gameTime);
 		}
@@ -76,7 +126,10 @@ namespace Rectangle_Exercise
 		{
 			GraphicsDevice.Clear(Color.CornflowerBlue);
 
-			// TODO: Add your drawing code here
+			foreach (Rect r in rectList)
+			{
+				r.Draw();
+			}
 
 			base.Draw(gameTime);
 		}
