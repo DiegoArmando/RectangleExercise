@@ -12,10 +12,6 @@ namespace Rectangle_Exercise
 	//NOTE: We will not be using any of the functions of the built in Rectangle object, as that would defeat the purpose of the exercise.
 	class Rect
 	{
-		//This makes it easier to identify what's happening for the user
-		public int ID; 
-
-
 		//These will be our primary detection tools, and are extensible to rotated rectangle detection.
 		public Vector2 topLeft;
 		public Vector2 topRight;
@@ -43,7 +39,7 @@ namespace Rectangle_Exercise
 		public bool contained = false;
 		public bool adjacent = false;
 
-		//The poits at which this rectangle intersects with others. This is nullable to allow the same logic for 2 or 4 intersections.
+		//The points at which this rectangle intersects with others. This is nullable to allow the same logic for 2 or 4 intersections.
 		IntersectionPoint[] intPoints;
 
 		//Is the box being dragged around the screen by the mouse?
@@ -58,10 +54,9 @@ namespace Rectangle_Exercise
 		RNGCryptoServiceProvider rand = new RNGCryptoServiceProvider();
 		byte[] randomNumber = new byte[1];
 
-		public Rect(GraphicsDevice gd, int sentID)
+		public Rect(GraphicsDevice gd)
 		{
 			sb = new SpriteBatch(gd);
-			ID = sentID;
 
 			color = Color.White; //The color is set to white so that it can be shifted any way we like.
 			color.A = 122;//set the alpha value to about half
@@ -90,6 +85,8 @@ namespace Rectangle_Exercise
 			
 		}
 
+		//This is called when the user presses R. It resets the position, height, and width of the 
+		//rectangles to random values.
 		public void Refresh(GraphicsDevice gd)
 		{
 			rand.GetBytes(randomNumber);
@@ -136,6 +133,8 @@ namespace Rectangle_Exercise
 			{
 				if (ContainsPoint(mouseVector))
 				{
+					//and if the user isn't already moving a rectangle, 
+					//grab this rectangle.
 					if (!beingDragged && !dragging)
 					{
 						beingDragged = true;
@@ -151,6 +150,8 @@ namespace Rectangle_Exercise
 			}
 			else
 			{
+				//If the mouse isn't being clicked, but this rectangle was being dragged,
+				//it is no longer being dragged.
 				if (beingDragged)
 				{
 					beingDragged = false;
@@ -285,7 +286,7 @@ namespace Rectangle_Exercise
 			//If the left is the same as or a subset of the other's right or left, color it yellow.
 			//Likewise, do the same for right, top and bottom.
 
-			//Alll sides are transparent until proven to be adjacent
+			//All sides are transparent until proven to be adjacent
 			
 			for(int i = 0; i < 4; i++)
 			{
@@ -320,8 +321,14 @@ namespace Rectangle_Exercise
 
 		void determineIntersections(Rect otherRect)
 		{
+			//First, we check for the top left corner. Then, check adjacent corners, and determine intersections
+			//based on those adjacent corners.
 			if(ContainsPoint(otherRect.topLeft))
 			{
+				//These series of cases cover the first three of eight potential outcomes:
+				//the top left and top right corners are inside,
+				//and the top left and bottom left corners are inside,
+				//and only the top left corner is inside, 
 				if (ContainsPoint(otherRect.topRight))
 				{
 					intPoints[0].changePos(otherRect.topLeft.X, botLeft.Y);
@@ -339,6 +346,10 @@ namespace Rectangle_Exercise
 					intPoints[1].changePos(botRight.X, otherRect.topLeft.Y);
 				}
 			}
+			//We do the same with the bottom right. This covers three more cases,
+			//The bottom right and bottom left corners are inside,
+			//the bottom right and top right corners are inside,
+			//and only the bottom right corner is inside.
 			else if(ContainsPoint(otherRect.botRight))
 			{
 				if(ContainsPoint(otherRect.botLeft))
@@ -357,6 +368,9 @@ namespace Rectangle_Exercise
 					intPoints[1].changePos(topLeft.X, otherRect.botRight.Y);
 				}
 			}
+			//At this point, there are only two unaccounted for cases:
+			//Only the bottom left is inside, and only the top right is inside.
+			//First, we check the bottom left.
 			else if(ContainsPoint(otherRect.botLeft))
 			{
 				intPoints[0].changePos(otherRect.botLeft.X, topRight.Y);
@@ -383,6 +397,7 @@ namespace Rectangle_Exercise
 			color.A = 122;
 		}
 
+		//This draws the rectangle, and any adjacent lines or intersecting points.
 		public void Draw()
 		{
 			sb.Begin();
@@ -391,7 +406,7 @@ namespace Rectangle_Exercise
 
 			sb.Draw(interiorTex, new Rectangle((int)topLeft.X, (int)topLeft.Y, width, height), null, color, 0, new Vector2(0, 0), SpriteEffects.None, 1);
 
-			//if they aren't adjacent, don't draw them
+			//if they aren't currently in use, don't draw them
 			for(int i = 0; i < 4; i++)
 			{
 				if(lines[i].adjacent) lines[i].Draw();

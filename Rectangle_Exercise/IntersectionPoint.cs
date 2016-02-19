@@ -54,7 +54,7 @@ namespace Rectangle_Exercise
 		{
 			sb.Begin();
 
-			//Drawthe 25 x 25 pixel box with its center as the origin
+			//Drawthe box with its center as the origin and size defined by the "size" member variable
 			sb.Draw(tex, new Rectangle((int)(pos.X - size / 2), (int)(pos.Y - size / 2), (int)size, (int)size), null, Color.White, 0, new Vector2(0f, 0f), SpriteEffects.None, 0);
 
 

@@ -15,7 +15,7 @@ namespace Rectangle_Exercise
 		public Vector2 startPoint;
 		public Vector2 endPoint;
 
-		//On the left and bottom, the lines will draw in an unintuivie place to the user. 
+		//On the left and bottom, the lines will draw in an unintuitive place to the user. 
 		//These two vectors will allow us to ensure that the math and what the user sees line up how they would expect.
 		Vector2 drawStart;
 		Vector2 drawEnd;
@@ -47,6 +47,7 @@ namespace Rectangle_Exercise
 			drawStart = startPoint;
 			drawEnd = endPoint;
 
+			//Determines if this line will draw itself slightly shifted so the math and the rendering match user expectations.
 			if(shiftR)
 			{
 				drawStart.X += lineWidth;
@@ -70,7 +71,8 @@ namespace Rectangle_Exercise
 
 			//The texture must be sent an array of colors, each index representing one pixel. 
 			lineTex.SetData<Color>(new Color[] { color });
-			sb = new SpriteBatch(gd);//This points the spritebatch to the renderer to allow us to make draw calls.
+			//This points the spritebatch to the renderer to allow us to make draw calls.
+			sb = new SpriteBatch(gd);
 		}
 
 		public void Draw()

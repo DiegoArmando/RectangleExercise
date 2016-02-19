@@ -6,10 +6,8 @@ using System.Collections.Generic;
 
 namespace Rectangle_Exercise
 {
-	/// <summary>
 	/// This is the main type for the project. In Monogame, the Game class is what handles drawing and updating, as well 
 	/// as content management.
-	/// </summary>
 	public class RectangleWindow : Game
 	{
 		GraphicsDeviceManager graphics;
@@ -23,25 +21,23 @@ namespace Rectangle_Exercise
 		//Is the user currently dragging a box? If so, don't drag any others.
 		bool dragging = false;
 		
+		//The class for the window. This initalizes the graphics handling, and is called by Monogame before Initialize()
 		public RectangleWindow()
 		{
 			graphics = new GraphicsDeviceManager(this);
 			Content.RootDirectory = "Content";
 		}
 
-		/// <summary>
-		/// Allows the game to perform any initialization it needs to before starting to run.
+		/// Allows the program to perform any initialization it needs to before starting to run.
 		/// This is where it can query for any required services and load any non-graphic
-		/// related content.  Calling base.Initialize will enumerate through any components
-		/// and initialize them as well.
-		/// </summary>
+		/// related content. 
 		protected override void Initialize()
 		{
 
 			rectList = new List<Rect>();
 			for (int i = 0; i < 2; i++)
 			{
-				rectList.Add(new Rect(GraphicsDevice, i));
+				rectList.Add(new Rect(GraphicsDevice));
 			}
 
 			this.IsMouseVisible = true;//Without this, the mouse is invisible
@@ -49,10 +45,10 @@ namespace Rectangle_Exercise
 			base.Initialize();
 		}
 
-		/// <summary>
-		/// LoadContent will be called once per game and is the place to load
-		/// all of your content.
-		/// </summary>
+
+		/// LoadContent will be called once and is the place to load graphical content.
+		/// In this case, we initialize the Spritebatch, since all textures are created in code
+		/// instead of retrieved from a file.
 		protected override void LoadContent()
 		{
 			// Create a new SpriteBatch, which can be used to draw textures.
@@ -60,15 +56,14 @@ namespace Rectangle_Exercise
 			
 		}
 
-		//Ordinarily in a Monogame project, there would also be an UnloadContent function.
+		//Ordinarily in a Monogame project, there would also be an UnloadContent() function.
 		//However, since the program only unloads content when it exits, in this case it is unnecessary. 
 
 
-		/// <summary>
-		/// Allows the game to run logic such as updating the world,
-		/// checking for collisions, gathering input, and playing audio.
-		/// </summary>
-		/// <param name="gameTime">Provides a snapshot of timing values.</param>
+
+		/// Allows the program to run logic such as updating the rectangles,
+		/// checking for collisions, and detecting input
+		/// GameTime is the elapsed time since the last frame.
 		protected override void Update(GameTime gameTime)
 		{
 			if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
